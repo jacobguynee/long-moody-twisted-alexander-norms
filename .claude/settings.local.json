@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:people.nmsu.edu)",
+      "Bash(matlab -batch \"burau_example\")",
+      "Bash(matlab -batch \"n=3; syms q; rho_g=cell\\(1,n\\); rho_sigma=cell\\(1,n-1\\); for i=1:n, rho_g{i}=q; end; for i=1:n-1, rho_sigma{i}=sym\\(1\\); end; rho_plus=reduced_long_moody\\(rho_g,rho_sigma\\); for i=1:n-1, fprintf\\(''sigma_%d =\\\\n'',i\\); disp\\(rho_plus{i}\\); end; verify_braid_relations\\(rho_plus\\); fprintf\\(''\\\\n---\\\\n''\\); n=5; rho_g=cell\\(1,n\\); rho_sigma=cell\\(1,n-1\\); for i=1:n, rho_g{i}=q; end; for i=1:n-1, rho_sigma{i}=sym\\(1\\); end; rho_plus=reduced_long_moody\\(rho_g,rho_sigma\\); for i=1:n-1, fprintf\\(''sigma_%d =\\\\n'',i\\); disp\\(rho_plus{i}\\); end; verify_braid_relations\\(rho_plus\\);\")",
+      "Bash(matlab -batch \":*)",
+      "WebFetch(domain:projecteuclid.org)"
+    ]
+  }
+}

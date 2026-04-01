@@ -1,0 +1,31 @@
+Papers Manifest
+===============
+
+bigelow_tian_2008.pdf
+  Title:   Generalized Long-Moody Representations of Braid Groups
+  Authors: Stephen Bigelow, Jianjun Paul Tian
+  Year:    2008
+  Journal: Communications in Contemporary Mathematics, Vol. 10, Suppl. 1, pp. 1093-1102
+  Source:  User's Downloads folder ("lm bigelow tian.pdf")
+  Summary: Gives the algebraic (matrix-level) Long-Moody construction: input a
+           representation of F_n ⋊ B_n, output a representation of B_n. Includes
+           the universal construction (Section 2), subgroup version (Section 3),
+           Gassner representation (Section 4), Lawrence/Hecke construction
+           (Section 5), and the reduced Long-Moody construction (Section 6).
+           Our code implements the reduced construction from Section 6.
+
+lawrence_1990.pdf
+  Title:   Homological Representations of the Hecke Algebra
+  Authors: R. J. Lawrence
+  Year:    1990
+  Journal: Communications in Mathematical Physics, Vol. 135, pp. 141-191
+  Source:  https://projecteuclid.org/journals/communications-in-mathematical-physics/volume-135/issue-1/Homological-representations-of-the-Hecke-algebra/cmp/1104201923.pdf
+  Summary: Topological construction of Hecke algebra representations via
+           homology of configuration spaces with twisted local coefficient
+           systems. The fibre is Y_{w,m} (configuration of m points in C
+           minus n punctures), with two parameters alpha, q. When alpha = q^{-2},
+           the representation factors through the Hecke algebra H_n(q) and
+           gives the representation associated to the Young diagram Lambda_m
+           (two rows, second row of length m). Sections 3-4 give explicit
+           recursive formulas for the braid group action (Theorem 3.4) and
+           the m=1 (Burau) and m=2 (Lawrence-Krammer) cases.
