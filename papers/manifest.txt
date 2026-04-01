@@ -14,6 +14,17 @@ bigelow_tian_2008.pdf
            (Section 5), and the reduced Long-Moody construction (Section 6).
            Our code implements the reduced construction from Section 6.
 
+long_1994.pdf
+  Title:   Constructing Representations of Braid Groups
+  Authors: D. D. Long
+  Year:    1994
+  Journal: Communications in Analysis and Geometry, Vol. 2, pp. 217-238
+  Source:  https://web.math.ucsb.edu/~long/pubpdf/ConstructiongRepresentations1994.pdf
+  Summary: Original Long-Moody construction. Shows how to build new braid group
+           representations from existing ones by "adding a strand" using the
+           Birman exact sequence. Proves the construction preserves faithfulness
+           and irreducibility under certain conditions.
+
 lawrence_1990.pdf
   Title:   Homological Representations of the Hecke Algebra
   Authors: R. J. Lawrence
