@@ -29,18 +29,23 @@ L_s1 = simplify(lawrence_generators(3, 1, 1/Q, 1/q, 1/a));
 L_s2 = simplify(lawrence_generators(3, 2, 1/Q, 1/q, 1/a));
 
 %% === Step 3: Find intertwining matrix P ===
-fprintf('=== Solving for P such that P * sigma_i = L_sigma_i * P ===\n');
+%
+% The intertwining condition P * s_i = L_s_i * P can be vectorized:
+%   (s_i^T ⊗ I_6 - I_6 ⊗ L_s_i) vec(P) = 0
+% Stack constraints for all generators and find the null space.
+
+fprintf('=== Solving for intertwining matrix P: P * sigma_i = L_sigma_i * P ===\n');
 I6 = sym(eye(6));
 A1 = kron(s1.', I6) - kron(I6, L_s1);
 A2 = kron(s2.', I6) - kron(I6, L_s2);
 N = null([A1; A2]);
 fprintf('Null space dimension: %d\n', size(N, 2));
-assert(size(N, 2) == 1, 'Expected 1-dimensional null space');
+assert(size(N, 2) == 1, 'Expected 1-dimensional null space (representations are irreducible).');
 
 P = simplify(reshape(N(:,1), [6, 6]));
 d = simplify(det(P));
 fprintf('det(P) = '); disp(d);
-assert(~isequal(d, sym(0)), 'P must be invertible');
+assert(~isequal(d, sym(0)), 'P must be invertible for generic Q, q, a.');
 fprintf('P is invertible for generic Q, q, a.\n');
 
 %% === Step 4: Verify simultaneous conjugacy ===
