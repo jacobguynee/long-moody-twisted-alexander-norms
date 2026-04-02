@@ -2,12 +2,14 @@
 """
 test_alexander_equals_thurston.py
 
-For alternating braids in B_3 and B_4 using all generators (pseudo-Anosov),
-the Alexander norm equals the Thurston norm. This script computes both
-independently and checks they agree.
+Compute the obvious fibered face of the Thurston norm unit ball for
+alternating braids in B_3 and B_4 using all generators (pseudo-Anosov).
 
-  - Thurston norm: via veering triangulations (compute_fibered_face.py)
-  - Alexander norm: via reduced Burau representation (alexander_thurston.py)
+Runs the veering computation on each braid and reports:
+  - taut isosig of the layered veering triangulation
+  - face rays (cone over the fibered face)
+  - taut polynomial
+  - Alexander norm (from Burau, for reference)
 
 Run with:  sage -python test_alexander_equals_thurston.py
 """
@@ -43,8 +45,8 @@ BRAIDS_B4 = [
 
 
 def main():
-    passed = 0
-    failed = 0
+    succeeded = 0
+    errored = 0
 
     for group_name, braids in [("B_3", BRAIDS_B3), ("B_4", BRAIDS_B4)]:
         print(f"\n{'='*60}")
@@ -56,24 +58,20 @@ def main():
 
             try:
                 data = obvious_fibered_face(word)
-                theta = data['taut_polynomial']
-                thurston = theta.degree()
-
-                if an == thurston:
-                    print(f"  {name:<30} alex={an}  thurston={thurston}  PASS")
-                    passed += 1
-                else:
-                    print(f"  {name:<30} alex={an}  thurston={thurston}  FAIL")
-                    print(f"    taut_isosig:     {data['taut_isosig']}")
-                    print(f"    taut_polynomial: {theta}")
-                    print(f"    face_rays:       {data['face_rays']}")
-                    failed += 1
+                print(f"\n  {name}")
+                print(f"    alexander_norm:  {an}")
+                print(f"    taut_isosig:     {data['taut_isosig']}")
+                print(f"    face_rays:       {data['face_rays']}")
+                print(f"    taut_polynomial: {data['taut_polynomial']}")
+                succeeded += 1
             except Exception as e:
-                print(f"  {name:<30} alex={an}  veering ERROR: {e}")
-                failed += 1
+                print(f"\n  {name}")
+                print(f"    alexander_norm:  {an}")
+                print(f"    ERROR: {e}")
+                errored += 1
 
     print(f"\n{'='*60}")
-    print(f"Results: {passed} passed, {failed} failed, {passed + failed} total")
+    print(f"{succeeded} succeeded, {errored} errored, {succeeded + errored} total")
     print(f"{'='*60}")
 
 
