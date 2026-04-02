@@ -13,7 +13,7 @@ Run with:  sage -python test_alexander_equals_thurston.py
 """
 
 from compute_fibered_face import obvious_fibered_face
-from alexander_thurston import compute_alexander_data
+from alexander_thurston import alexander_norm
 
 
 BRAIDS_B3 = [
@@ -42,18 +42,6 @@ BRAIDS_B4 = [
 ]
 
 
-def thurston_norm_from_veering(word):
-    """Extract the Thurston norm of the fiber from veering data.
-
-    For a 1-cusped manifold (knot complement), the Thurston norm of the
-    fiber equals the degree of the taut polynomial.
-    """
-    data = obvious_fibered_face(word)
-    poly = data['taut_polynomial']
-    # The taut polynomial degree gives the Thurston norm
-    return poly.degree(), data
-
-
 def main():
     passed = 0
     failed = 0
@@ -64,19 +52,24 @@ def main():
         print(f"{'='*60}")
 
         for name, word, n in braids:
-            alex_data = compute_alexander_data(word, n)
-            alex_norm = alex_data['alexander_norm']
+            an = alexander_norm(word, n)
 
             try:
-                thurston_deg, veering_data = thurston_norm_from_veering(word)
-                if alex_norm == thurston_deg:
-                    print(f"  {name:<30} alex={alex_norm}  thurston={thurston_deg}  PASS")
+                data = obvious_fibered_face(word)
+                theta = data['taut_polynomial']
+                thurston = theta.degree()
+
+                if an == thurston:
+                    print(f"  {name:<30} alex={an}  thurston={thurston}  PASS")
                     passed += 1
                 else:
-                    print(f"  {name:<30} alex={alex_norm}  thurston={thurston_deg}  FAIL (mismatch)")
+                    print(f"  {name:<30} alex={an}  thurston={thurston}  FAIL")
+                    print(f"    taut_isosig:     {data['taut_isosig']}")
+                    print(f"    taut_polynomial: {theta}")
+                    print(f"    face_rays:       {data['face_rays']}")
                     failed += 1
             except Exception as e:
-                print(f"  {name:<30} alex={alex_norm}  veering ERROR: {e}")
+                print(f"  {name:<30} alex={an}  veering ERROR: {e}")
                 failed += 1
 
     print(f"\n{'='*60}")

@@ -7,21 +7,14 @@ using the reduced Burau representation (via Long-Moody construction).
 This does NOT compute the Thurston norm. For the actual Thurston norm
 computation via veering triangulations, use compute_fibered_face.py.
 
-Purpose: provide Alexander norm values to VALIDATE the veering computation.
-For alternating braids in B_3 and B_4 (using all generators), the Alexander
-norm equals the Thurston norm. So we can verify that compute_fibered_face.py
-gives the correct Thurston norm by checking agreement with this module on
-alternating braids.
-
 The Alexander polynomial of an n-braid closure is:
     Delta(q) = det(I - Burau(beta))
 where Burau(beta) is the reduced Burau matrix in Z[q, q^{-1}].
 """
 
-from sympy import symbols, eye, zeros, Matrix, cancel, Poly, Rational, fraction, degree
+from sympy import symbols, eye, zeros, Matrix, cancel, Poly, Rational, fraction
 
-q, x = symbols('q x')
-t = symbols('t')
+q = symbols('q')
 
 
 # ---- Reduced Long-Moody / Burau ----
@@ -42,8 +35,10 @@ def build_Ni(i, gi, n, d):
         blocks[p+2][p] = Zd;  blocks[p+2][p+1] = Id;  blocks[p+2][p+2] = Id
     return blocks
 
+
 def left_multiply_blocks(blocks, M, nb):
     return [[M * blocks[r][c] for c in range(nb)] for r in range(nb)]
+
 
 def assemble(blocks, nb, d):
     N = nb * d; M = zeros(N)
@@ -51,6 +46,7 @@ def assemble(blocks, nb, d):
         for c in range(nb):
             M[r*d:(r+1)*d, c*d:(c+1)*d] = blocks[r][c]
     return M
+
 
 def reduced_lm_colored(rho_g, rho_sigma, partition=None):
     n = len(rho_g); num_sigmas = len(rho_sigma); d = rho_g[0].shape[0]
@@ -98,8 +94,8 @@ def eval_word(word, gens, inv_gens):
 
 # ---- Alexander polynomial ----
 
-def alexander_polynomial_1var(word, n):
-    """1-variable Alexander polynomial: det(I - Burau(beta)).
+def alexander_polynomial(word, n):
+    """Alexander polynomial of the closure of an n-braid: det(I - Burau(beta)).
 
     Returns a Laurent polynomial in q (up to unit q^k).
     """
@@ -122,110 +118,8 @@ def newton_polytope_1d(poly_expr, var=q):
     return (min(degs), max(degs))
 
 
-def alexander_norm_1d(poly_expr, var=q):
-    """Alexander norm = breadth of the Alexander polynomial.
-
-    For a knot, this is max_deg - min_deg of Delta(t).
-    """
-    lo, hi = newton_polytope_1d(poly_expr, var)
+def alexander_norm(word, n):
+    """Alexander norm of a braid closure = breadth of Alexander polynomial."""
+    delta = alexander_polynomial(word, n)
+    lo, hi = newton_polytope_1d(delta)
     return hi - lo
-
-
-def newton_polytope_2d(word, n):
-    """Newton polytope of charpoly of Burau(beta) in (x, q) coordinates.
-
-    Returns set of (x_deg, q_deg) monomials.
-    """
-    bg = build_burau(n)
-    bgi = [cancel(g.inv()) for g in bg]
-    M = eval_word(word, bg, bgi)
-    cp_expr = cancel(M.charpoly(x).as_expr())
-    num, den = fraction(cp_expr)
-    p = Poly(num, x, q)
-    monoms_num = p.monoms()
-    q_shift = Poly(den, q).degree() if den.has(q) else 0
-    return set((xd, qd - q_shift) for (xd, qd) in monoms_num)
-
-
-def convex_hull_2d(points):
-    points = sorted(set(points))
-    if len(points) <= 2: return points
-    def cross(O, A, B):
-        return (A[0]-O[0])*(B[1]-O[1]) - (A[1]-O[1])*(B[0]-O[0])
-    lower = []
-    for p in points:
-        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0: lower.pop()
-        lower.append(p)
-    upper = []
-    for p in reversed(points):
-        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0: upper.pop()
-        upper.append(p)
-    return sorted(set(lower[:-1] + upper[:-1]))
-
-
-# ---- Main computation ----
-
-def compute_alexander_data(word, n):
-    """Compute Alexander norm data for a braid closure.
-
-    Returns a dict with Alexander polynomial, Newton polytope,
-    Alexander norm, and genus estimate.
-
-    To validate veering Thurston norm computations, compare
-    alexander_norm from this function against the Thurston norm
-    from compute_fibered_face.obvious_fibered_face() on
-    alternating braids (where equality is known to hold).
-    """
-    bg = build_burau(n)
-    bgi = [cancel(g.inv()) for g in bg]
-    M = eval_word(word, bg, bgi)
-
-    # 1-variable Alexander polynomial
-    dim = M.shape[0]
-    delta = cancel((eye(dim) - M).det())
-    np_1d = newton_polytope_1d(delta)
-    alex_norm = np_1d[1] - np_1d[0]
-
-    # 2-variable Newton polytope of charpoly
-    cp_expr = cancel(M.charpoly(x).as_expr())
-    num, den = fraction(cp_expr)
-    p = Poly(num, x, q)
-    monoms_num = p.monoms()
-    q_shift = Poly(den, q).degree() if den.has(q) else 0
-    np_2d = set((xd, qd - q_shift) for (xd, qd) in monoms_num)
-    hull_2d = convex_hull_2d(list(np_2d))
-
-    writhe = sum(1 if w > 0 else -1 for w in word)
-    genus = Rational(alex_norm, 2)
-
-    return {
-        'braid_word': word,
-        'n_strands': n,
-        'writhe': writhe,
-        'burau_matrix': M,
-        'alexander_poly': delta,
-        'alexander_poly_newton_1d': np_1d,
-        'alexander_norm': alex_norm,
-        'genus': genus,
-        'charpoly_newton_2d': hull_2d,
-    }
-
-
-# Keep old name as alias for backwards compatibility with test script
-fibered_face_from_alexander = compute_alexander_data
-
-
-def print_alexander_data(data):
-    """Pretty-print Alexander norm computation."""
-    print(f"Braid: {data['braid_word']} in B_{data['n_strands']}")
-    print(f"Writhe: {data['writhe']}")
-    print(f"Alexander polynomial: {data['alexander_poly']}")
-    print(f"  Newton polytope (1D): [{data['alexander_poly_newton_1d'][0]}, "
-          f"{data['alexander_poly_newton_1d'][1]}]")
-    print(f"  Alexander norm: {data['alexander_norm']}")
-    print(f"  Genus (= alex_norm/2): {data['genus']}")
-    print(f"Charpoly Newton polytope (x, q): {data['charpoly_newton_2d']}")
-
-
-# Keep old name as alias
-print_fibered_face = print_alexander_data
