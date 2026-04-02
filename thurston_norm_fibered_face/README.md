@@ -2,196 +2,121 @@
 
 ## Overview
 
-Compute the obvious fibered face of the Thurston norm unit ball for braid
-closures, using the fact that for alternating braids in B_3 and B_4 (using
-all generators), Alexander norm = Thurston norm.
-
-Two approaches are provided:
-
-1. **`alexander_thurston.py`** — Pure SymPy. Computes the Alexander polynomial
-   as det(I - Burau(beta)), then extracts the fibered face from its Newton
-   polytope. Works in any Python environment with SymPy.
-
-2. **`veering_approach.py`** — Reference implementation using SnapPy + Regina +
-   veering package. Computes the fibered face via layered veering triangulations
-   (Landry-Minsky-Taylor). Requires a SageMath environment with topology packages.
-
-## Quick Start (alexander_thurston.py)
-
-This works out of the box with just Python 3 + SymPy:
-
-```bash
-# Run the test suite (35 alternating braids in B_3 and B_4)
-python test_alternating_braids.py
-
-# Use interactively
-python -c "
-from alexander_thurston import fibered_face_from_alexander, print_fibered_face
-data = fibered_face_from_alexander([1, -2, 3], 4)
-print_fibered_face(data)
-"
-```
-
-### What `fibered_face_from_alexander` returns
-
-```python
-{
-    'braid_word': [1, -2, 3],
-    'n_strands': 4,
-    'writhe': 1,
-    'burau_matrix': <SymPy Matrix>,        # Reduced Burau of braid word
-    'alexander_poly': <SymPy expr>,         # det(I - Burau(beta)) in Z[q,q^-1]
-    'alexander_poly_newton_1d': (-1, 2),    # (min_deg, max_deg) of Alexander poly
-    'alexander_norm': 3,                    # breadth = max_deg - min_deg
-    'genus': 3/2,                           # = alexander_norm / 2
-    'charpoly_newton_2d': [(0,1), ...],     # convex hull of charpoly in (x, q)
-    'thurston_norm_of_fiber': 3,            # = alexander norm (for alternating braids)
-}
-```
-
-## Setting Up the Veering Approach (veering_approach.py)
-
-The veering approach requires a SageMath environment. Here's how to set it up:
-
-### Option 1: SageMath + pip (recommended)
-
-```bash
-# Install SageMath (Ubuntu/Debian)
-sudo apt install sagemath
-
-# Or via conda
-conda create -n sage sage -c conda-forge
-conda activate sage
-
-# Install topology packages inside Sage's Python
-sage -pip install snappy
-sage -pip install regina
-sage -pip install veering
-sage -pip install flipper  # optional, for direct veering triangulations
-```
-
-### Option 2: Docker
-
-```bash
-# Use the computop/sage image which has snappy pre-installed
-docker run -it computop/sage bash
-sage -pip install veering flipper
-```
-
-### Using the veering approach
-
-```python
-# Inside a SageMath session or sage -python
-from veering_approach import obvious_fibered_face_veering
-
-# Braid word as signed generator indices
-result = obvious_fibered_face_veering([1, -2, 3])
-print(result['taut_isosig'])
-print(result['face_rays'])       # Rays of the cone over the fibered face
-print(result['taut_polynomial']) # = Teichmuller polynomial (layered case)
-
-# Alternative: use flipper for pseudo-Anosov mapping classes
-from veering_approach import obvious_fibered_face_flipper
-result = obvious_fibered_face_flipper('abcABC')
-```
-
-### What the veering approach computes
-
-1. Builds the mapping torus of the braid as a SnapPy manifold.
-2. Converts to a Regina triangulation.
-3. Searches for layered taut angle structures (these exist when the
-   braid is pseudo-Anosov).
-4. The layered veering triangulation carries a cone that is exactly
-   the cone over the fibered face (Landry-Minsky-Taylor theorem).
-5. Returns the face rays and the taut polynomial (= Teichmuller
-   polynomial up to a unit in the layered case).
-
-### Verifying Alexander norm = Thurston norm
-
-Once the veering packages are installed, you can cross-check:
-
-```python
-from alexander_thurston import fibered_face_from_alexander
-from veering_approach import obvious_fibered_face_veering
-
-word = [1, -2, 3, 1, -2, 3]  # alternating B_4 braid
-
-# Alexander approach
-alex = fibered_face_from_alexander(word, 4)
-print(f"Alexander norm: {alex['alexander_norm']}")
-
-# Veering approach
-veer = obvious_fibered_face_veering(word)
-print(f"Taut polynomial: {veer['taut_polynomial']}")
-print(f"Face rays: {veer['face_rays']}")
-```
-
-## Mathematical Background
-
-### Alexander polynomial from Burau
-
-For an n-braid beta, the Alexander polynomial of its closure is:
-
-```
-Delta(t) = det(I - Burau(beta))
-```
-
-where Burau(beta) is the reduced Burau representation evaluated at
-q = t. The reduced Burau is computed via the Long-Moody construction
-with trivial inputs: rho(g_i) = q, rho(sigma_j) = 1.
-
-### Alexander norm and Thurston norm
-
-The **Alexander norm** of a class in H^1(M; Z) is defined via the
-Newton polytope of the Alexander polynomial. For a knot (1-component
-braid closure), it equals the breadth (max_deg - min_deg) of Delta(t).
-
-The **Thurston norm** measures the minimal complexity of embedded
-surfaces representing a homology class. McMullen (2002) showed:
-
-```
-Alexander norm <= Thurston norm
-```
-
-For alternating braids in B_3 and B_4 that use all generators (hence
-pseudo-Anosov), equality holds (author's theorem):
-
-```
-Alexander norm = Thurston norm  (alternating braids in B_3, B_4)
-```
-
-### Fibered face
-
-The mapping torus of a pseudo-Anosov braid is fibered. The **fibered
-face** is the top-dimensional face of the Thurston norm unit ball dual
-to the fiber class. In the knot case (H^1 = R), the unit ball is
-[-1/c, 1/c] where c = Thurston norm of the fiber, and the fibered
-face consists of the two endpoints.
-
-For links (multi-component closures), the fibered face lives in
-H^1 = R^k and is determined by the Newton polytope of the
-multivariable Alexander polynomial.
+Compute the obvious fibered face of the Thurston norm unit ball for
+pseudo-Anosov braid closures, using layered veering triangulations
+(Landry-Minsky-Taylor).
 
 ## Files
 
 | File | Description |
 |------|-------------|
-| `alexander_thurston.py` | Pure-SymPy fibered face computation from Alexander polynomial |
-| `veering_approach.py` | Reference implementation using SnapPy/Regina/veering (requires SageMath) |
-| `test_alternating_braids.py` | Test suite: 35 alternating braids in B_3 and B_4 |
+| `compute_fibered_face.py` | **Main script.** Computes the fibered face via SnapPy + Regina + veering. Requires SageMath environment. |
+| `alexander_thurston.py` | Computes the Alexander polynomial and Alexander norm from the reduced Burau representation. Pure SymPy, runs anywhere. Used to validate the veering computation. |
+| `test_alternating_braids.py` | Computes Alexander norms for 35 alternating braids in B_3 and B_4. These are ground-truth values for validating `compute_fibered_face.py`. |
 
-## Dependencies
+## How It Works
 
-- **alexander_thurston.py**: Python 3, SymPy (works anywhere)
-- **veering_approach.py**: SageMath, SnapPy, Regina, veering, (optionally flipper)
-- **test_alternating_braids.py**: Python 3, SymPy
+### Thurston norm computation (`compute_fibered_face.py`)
+
+For a pseudo-Anosov n-braid beta:
+
+1. **SnapPy** builds the mapping torus M_beta from the braid word.
+2. **Regina** enumerates taut angle structures on the triangulation.
+3. **veering** identifies layered taut structures and computes:
+   - The cone over the fibered face via `cone_in_homology()`
+   - The taut polynomial via `taut_polynomial_via_fox_calculus()`
+
+Landry-Minsky-Taylor proved that the cone carried by a layered veering
+triangulation is exactly the cone over the corresponding fibered face of
+the Thurston norm ball.
+
+### Validation strategy
+
+For alternating braids in B_3 and B_4 that use all generators (hence
+pseudo-Anosov), the Alexander norm equals the Thurston norm. So:
+
+1. Run `test_alternating_braids.py` to get Alexander norms (pure SymPy).
+2. Run `compute_fibered_face.py` on the same braids (SageMath + veering).
+3. Verify: Thurston norm from veering == Alexander norm from Burau.
+
+## Installation
+
+`compute_fibered_face.py` requires a SageMath environment with topology
+packages. Here's how to set it up:
+
+### Option 1: SageMath + pip (recommended)
+
+```bash
+# Install SageMath
+# Ubuntu/Debian:
+sudo apt install sagemath
+# Or via conda:
+conda create -n sage sage -c conda-forge && conda activate sage
+
+# Install topology packages inside Sage's Python
+sage -pip install snappy
+sage -pip install regina
+sage -pip install veering
+sage -pip install flipper   # optional, for direct veering triangulations
+```
+
+### Option 2: Docker
+
+```bash
+docker run -it computop/sage bash
+sage -pip install veering flipper
+```
+
+## Usage
+
+### Thurston norm (requires SageMath + veering)
+
+```bash
+# Run on default examples
+sage -python compute_fibered_face.py
+
+# Run on a specific braid
+sage -python compute_fibered_face.py 1 -2 3
+```
+
+```python
+from compute_fibered_face import obvious_fibered_face
+
+data = obvious_fibered_face([1, -2, 3])
+print(data['taut_isosig'])       # isosig of layered veering triangulation
+print(data['face_rays'])         # rays of cone over fibered face
+print(data['taut_polynomial'])   # = Teichmüller polynomial (layered case)
+```
+
+### Alexander norm validation (runs anywhere with SymPy)
+
+```bash
+python test_alternating_braids.py
+```
+
+```python
+from alexander_thurston import compute_alexander_data
+
+data = compute_alexander_data([1, -2, 3], n=4)
+print(data['alexander_norm'])    # should match Thurston norm for alternating braids
+```
+
+## Caveats
+
+- **Homology basis**: `face_rays` from veering are in the veering homology
+  basis, dual to the basis used for taut/veering polynomials. You may need
+  a change-of-basis to convert to geometric meridian/longitude coordinates.
+
+- **Layered structures**: The code searches for layered taut angle structures
+  on the SnapPy triangulation. If none are found (rare for pseudo-Anosov
+  braids), use `flipper.bundle()` to construct Agol's veering triangulation
+  directly — see `obvious_fibered_face_flipper()`.
 
 ## References
 
-- McMullen, C. T. (2002). The Alexander polynomial of a 3-manifold and
-  the Thurston norm on cohomology. *Annales scientifiques de l'ENS*.
 - Landry, M., Minsky, Y., & Taylor, S. (2021). A polynomial invariant
   for veering triangulations. *Journal of Topology*.
 - Agol, I. (2011). Ideal triangulations of pseudo-Anosov mapping tori.
   *Topology and Geometry in Dimension Three*, AMS.
-- Lawrence, R. J. (1990). Homological representations of the Hecke algebra.
+- McMullen, C. T. (2002). The Alexander polynomial of a 3-manifold and
+  the Thurston norm on cohomology. *Annales scientifiques de l'ENS*.

@@ -2,57 +2,47 @@
 """
 test_alternating_braids.py
 
-Verify the fibered face computation on alternating braids in B_3 and B_4.
+Compute Alexander norms for alternating braids in B_3 and B_4.
 
-An alternating braid uses all generators with alternating signs:
-  B_3: words in {s1, s2^{-1}}
-  B_4: words in {s1, s2^{-1}, s3}
+For alternating braids using all generators (pseudo-Anosov), the Alexander
+norm equals the Thurston norm. This provides ground-truth values to validate
+the veering Thurston norm computation (compute_fibered_face.py).
 
-When all generators appear, the braid is pseudo-Anosov, and the author's
-theorem gives: Alexander norm = Thurston norm for these braids.
-
-This script:
-1. Computes the reduced Burau matrix for each braid.
-2. Computes det(I - Burau(beta)) = Alexander polynomial (1-variable).
-3. Computes the Alexander norm (breadth of Newton polytope).
-4. Computes the 2D Newton polytope of the characteristic polynomial.
-5. Verifies internal consistency and prints the fibered face data.
+Validation strategy:
+  1. Run this script to get Alexander norms (runs anywhere with SymPy).
+  2. Run compute_fibered_face.py on the same braids (requires SageMath +
+     snappy + regina + veering).
+  3. Check that the Thurston norm from veering equals the Alexander norm
+     from this script on every alternating braid.
 
 Usage:
     python test_alternating_braids.py
 """
 
-from sympy import Rational, cancel, Poly, symbols, fraction
+from sympy import Rational
 
 from alexander_thurston import (
-    build_burau, eval_word, alexander_polynomial_1var,
-    newton_polytope_1d, alexander_norm_1d,
-    newton_polytope_2d, convex_hull_2d,
-    fibered_face_from_alexander, print_fibered_face,
+    compute_alexander_data,
+    print_alexander_data,
+    newton_polytope_1d,
+    alexander_norm_1d,
 )
-
-q = symbols('q')
 
 
 def test_braid(name, word, n):
-    """Test a single braid and return results."""
-    data = fibered_face_from_alexander(word, n)
+    """Compute Alexander norm for a single braid. Returns data dict."""
+    data = compute_alexander_data(word, n)
     alex_norm = data['alexander_norm']
     genus = data['genus']
-    hull = data['charpoly_newton_2d']
 
-    # Basic consistency checks
     assert alex_norm >= 0, f"Negative Alexander norm for {name}"
 
-    # For pseudo-Anosov braids, alexander norm should be positive
+    # For pseudo-Anosov (uses all generators), norm should be positive
     if len(set(abs(w) for w in word)) == n - 1:
         assert alex_norm > 0, f"Zero Alexander norm for pseudo-Anosov {name}"
 
-    # Genus should be half the Alexander norm (knot case)
     assert genus == Rational(alex_norm, 2), f"Genus mismatch for {name}"
 
-    # Newton polytope 1D endpoints should be symmetric about 0
-    # (after normalization, which we don't enforce here)
     np1d = data['alexander_poly_newton_1d']
     breadth = np1d[1] - np1d[0]
     assert breadth == alex_norm, f"Breadth != alex_norm for {name}"
@@ -69,6 +59,7 @@ def main():
     # =========================================================
     print("=" * 65)
     print("B_3 alternating braids (words in s1, s2^-1)")
+    print("Alexander norm = Thurston norm for these braids")
     print("=" * 65)
 
     b3_braids = [
@@ -96,7 +87,7 @@ def main():
             an = data['alexander_norm']
             g = data['genus']
             np1d = data['alexander_poly_newton_1d']
-            print(f"  {name:<40} norm={str(an):<4} genus={str(g):<6} NP=[{np1d[0]},{np1d[1]}]  OK")
+            print(f"  {name:<40} alex_norm={str(an):<4} genus={str(g):<6} NP=[{np1d[0]},{np1d[1]}]  OK")
             pass_count += 1
         except Exception as e:
             print(f"  {name:<40} FAIL: {e}")
@@ -107,6 +98,7 @@ def main():
     print()
     print("=" * 65)
     print("B_4 alternating braids (words in s1, s2^-1, s3)")
+    print("Alexander norm = Thurston norm for these braids")
     print("=" * 65)
 
     b4_braids = [
@@ -140,7 +132,7 @@ def main():
             g = data['genus']
             np1d = data['alexander_poly_newton_1d']
             hull = data['charpoly_newton_2d']
-            print(f"  {name:<40} norm={str(an):<4} genus={str(g):<6} NP=[{np1d[0]},{np1d[1]}]  hull={len(hull)}v  OK")
+            print(f"  {name:<40} alex_norm={str(an):<4} genus={str(g):<6} NP=[{np1d[0]},{np1d[1]}]  hull={len(hull)}v  OK")
             pass_count += 1
         except Exception as e:
             print(f"  {name:<40} FAIL: {e}")
@@ -161,8 +153,8 @@ def main():
 
     for name, word, n in examples:
         print(f"\n--- {name} ---")
-        data = fibered_face_from_alexander(word, n)
-        print_fibered_face(data)
+        data = compute_alexander_data(word, n)
+        print_alexander_data(data)
 
     # =========================================================
     # Summary
@@ -171,8 +163,12 @@ def main():
     print("=" * 65)
     print(f"TOTAL: {pass_count}/{total} passed")
     if pass_count == total:
-        print("All alternating braids: Alexander norm computed successfully.")
-        print("For these braids, Alexander norm = Thurston norm (author's theorem).")
+        print("All Alexander norms computed successfully.")
+        print()
+        print("To validate the veering Thurston norm computation:")
+        print("  1. Install: sage -pip install snappy regina veering")
+        print("  2. Run: sage -python compute_fibered_face.py")
+        print("  3. Check: Thurston norm == Alexander norm for each braid above")
     print("=" * 65)
 
 
